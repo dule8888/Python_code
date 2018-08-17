@@ -18,13 +18,14 @@ from IPython.display import Image as im
 import squarify as sq
 
 
-data = pd.read_csv(r'Y:\le\FEEDBACK\feed.csv', encoding = "ISO-8859-1")
+data = pd.read_csv(r'Y:\le\FEEDBACK\feed1.csv', encoding = "ISO-8859-1")
 data.rename(columns={'listing Id':'listing_Id'}, inplace=True)
+data[['listing_Id']] = data[['listing_Id']].astype(str)
 
-listing_Id = data.listing_Id.value_counts()
+cat_number = data.Cat.value_counts()
 
 # Limit top listings to those with more than 2 times
-temp_dict = listing_Id[listing_Id>=2].to_dict()
+temp_dict = cat_number.to_dict()
 temp_dict['Other'] = listing_Id[listing_Id<2].sum()
 less_listing = pd.Series(temp_dict)
 less_listing.sort_values(ascending=False, inplace=True)
@@ -49,27 +50,29 @@ plt.title('Countries by Number of Wine Reviews')
 plt.show()
 
 # for
-#descriptions = defaultdict(list)
-#data.apply(lambda x: descriptions[x.country].append(x.description), axis=1)
-#descriptions['Italy'][0:5]
-
-descriptions = []
-data.apply(lambda x: descriptions.append(x.Feedback), axis=1)
-
-
+descriptions = defaultdict(list)
+data.apply(lambda x: descriptions[x.Cat].append(x.Feedback), axis=1)
+descriptions['Bumpers'][0:5]
+desc_string=''
 # tokenization
 unwanted_characters = re.compile('[^A-Za-z ]+')
-desc_string = ' '.join(descriptions)
-descriptions = ' '.join([w.lower() for w in re.sub(unwanted_characters, ' ', desc_string).split() if len(w) > 3])
+try:   
+    for cat in temp_dict:
+        number = temp_dict[cat]
+        desc_string = ' '.join(descriptions[cat])
+        descriptions[cat] = ' '.join([w.lower() for w in re.sub(unwanted_characters, ' ', desc_string).split() if len(w) > 3])
+        wc=WordCloud(width=1000, height=800,background_color="white",colormap='jet')
+        wc.generate(descriptions[cat])
+        wc.to_file(r'Y:\le\FEEDBACK\image1\%s_%d.jpg' %(cat,number))
+except:
+    pass
 
 # add stopwords
 nf_stopwords = ['order','refund','ship','part','ebay','item','seller','week','ordered','weeks','will','still','canceled','days','never']
 for w in nf_stopwords:
     STOPWORDS.add(w)
 
-wc=WordCloud(background_color="white",colormap='jet')
-wc.generate(descriptions)
-wc.to_image()
+
 
 wordlist  = wc.words_
 
